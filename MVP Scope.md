@@ -35,34 +35,6 @@ Based on the user stories, the following technical tasks should be included in t
 
 ## Overview
 
-```uml
-@startuml
-!theme vibrant
-title MVP Task-Based Work Breakdown
-
-|Main Flow|
-start
-:Get live video feed from cameras installed in the store;
-fork
-:Object and people detection;
-fork
-:Object detection;
-fork again
-:People detection;
-fork
-:Peak hour prediction;
-fork again
-:Checkout line detection;
-fork again
-:Heatmap creation;
-end fork
-end fork
-end fork
-:Live video play;
-stop
-@enduml
-```
-
 <img src="MVP%20Scope/image-20230430223443746.png" alt="image-20230430223443746" style="zoom:50%;" />
 
 ## Task breakdown
