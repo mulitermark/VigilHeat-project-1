@@ -23,9 +23,29 @@ Rachel wants to use VigilHeat to:
 
 Rachel values data-driven insights to improve business operations, achieve sales goals, and enhance store security.
 
-**Retail Manager Robert:** Robert is a retail manager who is primarily focused on managing peak hours and reducing queue problems in his store. He is in his early 40s, with a background in retail operations and customer service. Robert is interested in using VigilHeat to monitor customer flow during peak hours, identify patterns in customer behavior, and predict when peak hours are most likely to occur. He also wants to use VigilHeat to monitor queue lengths and receive real-time alerts to open new checkout lanes when needed. Robert values data-driven insights to improve customer experience and maintain efficient store operations during busy times.
+### Changes
+She maintains a desire to analyze customer behavior and interactions with different products, adding:
+- Optimize store layout and product displays.
+- Improve store security and handle theft with AI.
+- Monitor queue lengths at cash registers.
+- Get real-time alerts for security issues.
 
-**Mall Operations Manager Melanie:** Melanie is an operations manager responsible for managing a large shopping mall, which includes multiple retail stores, entertainment venues, and dining options. She is in her late 40s and has a background in facility management and operations. Melanie is interested in using VigilHeat to monitor and optimize the flow of people throughout the mall, particularly during peak hours, to ensure a comfortable and enjoyable experience for visitors. She also wants to use VigilHeat to manage queues at popular venues and minimize congestion in common areas.
+**Retail Manager Mark:** Robert is a retail manager who is primarily focused on managing peak hours and reducing queue problems in his store. He is in his early 40s, with a background in retail operations and customer service. Robert is interested in using VigilHeat to monitor customer flow during peak hours, identify patterns in customer behavior, and predict when peak hours are most likely to occur. He also wants to use VigilHeat to monitor queue lengths and receive real-time alerts to open new checkout lanes when needed. Robert values data-driven insights to improve customer experience and maintain efficient store operations during busy times.
+
+### Changes
+His profession is modified to bring it closer to the current scope of the project:
+- Manage peak hours and reduce queue problems.
+- Improve store security and handle theft with AI.
+- Monitor queue lengths at cash registers.
+- Monitor customer flow and predict peak hours.
+
+**Mall Operations Manager Catherine:** Melanie is an operations manager responsible for managing a large shopping mall, which includes multiple retail stores, entertainment venues, and dining options. She is in her late 40s and has a background in facility management and operations. Melanie is interested in using VigilHeat to monitor and optimize the flow of people throughout the mall, particularly during peak hours, to ensure a comfortable and enjoyable experience for visitors. She also wants to use VigilHeat to manage queues at popular venues and minimize congestion in common areas.
+
+### Changes
+Her profession is modified to bring it closer to the current scope of the project:
+- Manage large shopping mall with multiple stores and venues.
+- Monitor and optimize people flow during peak hours.
+- Manage queues at popular venues, reduce congestion.
 
 # User Stories
 High priority user stories address the most critical aspects of their objectives, while medium and low priority stories provide additional value in achieving her goals.
