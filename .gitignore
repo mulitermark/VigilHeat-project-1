@@ -1,1 +1,6 @@
 venv/
+.idea
+**pycache**
+**.pt
+**.mp4
+**.npy
