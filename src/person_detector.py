@@ -10,7 +10,6 @@ class PersonDetector:
         self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
         self.model.conf = 0.25
         self.model.classes = [0]
-        self.detections = []
 
     def detect(self, frame, frame_num):
 
@@ -31,9 +30,6 @@ class PersonDetector:
         for center in ground_positions:
             single_image_detectons.append(np.array([frame_num, center[0], center[1]], dtype=np.uint32))
 
-        # extend the detections with the detections from this frame
-        self.detections.extend(single_image_detectons)
-
         # Convert the frame back to BGR
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
@@ -41,14 +37,7 @@ class PersonDetector:
         for center in ground_positions:
             cv2.circle(frame, center, 10, 0, -1)
 
-        return frame, single_image_detectons
-
-        # # Display the resulting frame
-        # cv2.imshow('YOLOv5 Person Detection', frame)
-
-        # # Break the loop if 'q' key is pressed
-        # if cv2.waitKey(1) == ord('q'):
-        #     break
+        return frame, np.array(single_image_detectons)
 
     def save_detections(self, path):
         np.save(path, np.array(self.detections))

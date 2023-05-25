@@ -17,7 +17,7 @@ class Application:
         self.heatmap_generator = HeatmapGenerator(1270, 720)
         self.histogram_generator = HistogramGenerator("minute")
 
-        video_path = 'src/pexels-cottonbro-8717592.mp4'
+        video_path = 'test.mp4'
         self.streamer = VideoStreamHandler(video_path)
         self.person_detector = PersonDetector()
 
@@ -45,7 +45,7 @@ class Application:
         if heatmap is not None and isinstance(heatmap, np.ndarray) and heatmap.size > 0:
             # Resize the image and update the canvas
             heatmap_resized = cv2.resize(heatmap, (graph_width, graph_height))
-            canvas[:graph_height, cam_width:] = heatmap_resized
+            canvas[:graph_height, cam_width:, 2] = heatmap_resized
 
         if histogram is not None and isinstance(histogram, np.ndarray) and histogram.size > 0:
             # Resize the image and update the canvas
@@ -65,10 +65,7 @@ class Application:
         # Initialize the VideoWriter
         video_writer = cv2.VideoWriter(output_filename, codec, fps, (width, height))
 
-
-        current_time = datetime.datetime.now()
-        i = 0
-        for i in range(1000):
+        while True:
             key = cv2.waitKey(1) & 0xFF
             if key == ord('p'):  # Pause the application when 'p' is pressed
                 self.updating = False
@@ -77,19 +74,13 @@ class Application:
             elif key == 27:  # Exit the application when 'ESC' is pressed
                 break
 
-            i+=1
-
-            if i%10 != 0:
-                continue
-
-            if i % 1000 == 0:
-                break
-
             print(f"Processing frame {self.frame_num}...")
-            current_time += datetime.timedelta(seconds=1.5)
+            current_time = datetime.datetime.now()
             if self.updating:
                 # Process the frame
                 self.process_frame(current_time)
+                if self.frame is None:
+                    return
 
                 # Update the images
                 self.canvas = self.update_canvas(self.canvas, self.frame, self.heatmap, self.histogram)
@@ -106,13 +97,11 @@ class Application:
         self.frame_num += 1
 
         # Read the next frame from the video
-        frame = self.streamer.get_frame()
-        if frame is None:
+        self.frame = self.streamer.get_frame()
+        if self.frame is None:
             return
 
-        frame, detections = self.person_detector.detect(frame, self.frame_num)
-        heatmap = self.heatmap_generator.create_heatmap(detections, 0, 3000, 1)
+        self.frame, detections = self.person_detector.detect(self.frame, self.frame_num)
+        self.heatmap = self.heatmap_generator.create_heatmap(detections, self.frame_num, 1)
 
         self.histogram = self.histogram_generator.add_input(detections, current_time)
-        self.frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        self.heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)

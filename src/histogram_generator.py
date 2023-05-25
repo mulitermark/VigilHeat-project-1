@@ -38,12 +38,12 @@ class HistogramGenerator:
             # use now as timestamp
             timestamp = datetime.datetime.now()
 
-        for detection in detection_list:
+        for _ in detection_list:
             self.process_input(timestamp)
 
         return self.generate_histogram()
 
-    def generate_histogram(self, start = 20, end = 59):
+    def generate_histogram(self, start=0, end=59):
         """
         This method generates a histogram based on the interval and range provided.
         """
@@ -76,22 +76,19 @@ class HistogramGenerator:
 
         counts = [data.get(key, 0) for key in x]
         # blue color for the bars
-        plt.bar(x, counts, color='#1f77b4')
-        plt.xlabel(xlabel)
-        plt.ylabel("Number of people")
-        plt.title(f"People count per {self.interval} from {start} to {end}")
-        plt.xticks(x, x_labels, rotation=45)
-        # plt.show()
-        # # Close the plot to release resources
-        # plt.close()
-
-        # Save the plot to a BytesIO object
-        image_stream = io.BytesIO()
-        plt.savefig(image_stream, format='PNG')
-        image_stream.seek(0)
-        image = cv2.imdecode(np.frombuffer(image_stream.read(), np.uint8), 1)
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.bar(x, counts, color='#1f77b4')
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel("Number of detections")
+        ax.set_title(f"Person detection count per {self.interval} from {start} to {end}")
+        ax.set_xticks(x, x_labels, rotation=45)
 
         # Return the histogram image as a cv2 image
+        fig.canvas.draw()
+        image = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+        image = image.reshape(fig.canvas.get_width_height()[::-1] + (3,))[:, :, ::-1]
+        plt.close(fig)
         return image
 
 # Test data generator
