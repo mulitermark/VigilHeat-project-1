@@ -14,6 +14,7 @@ WINDOW_HEIGHT = 720
 CAM_WIDTH = 1280
 CAM_HEIGHT = 720
 
+
 class Application:
     def __init__(self):
         self.updating = True
@@ -24,7 +25,7 @@ class Application:
         self.heatmap_generator = HeatmapGenerator(CAM_WIDTH, CAM_HEIGHT)
         self.histogram_generator = HistogramGenerator("minute")
 
-        video_path = 'test.mp4'
+        video_path = "test.mp4"
         self.streamer = VideoStreamHandler(video_path)
         self.person_detector = PersonDetector()
 
@@ -32,17 +33,46 @@ class Application:
         self.canvas = np.ones((WINDOW_HEIGHT, WINDOW_WIDTH, 3), dtype=np.uint8) * 255
         text_pos_x = WINDOW_WIDTH - 220
         text_pos_y = WINDOW_HEIGHT - 120
-        cv2.putText(self.canvas, "CONTROLS:", (text_pos_x, text_pos_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
-        cv2.putText(self.canvas, "Esc: Exit application", (text_pos_x, text_pos_y + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0))
-        cv2.putText(self.canvas, "P: Pause application", (text_pos_x, text_pos_y + 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0))
-        cv2.putText(self.canvas, "R: Resume application", (text_pos_x, text_pos_y + 75), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0))
+        cv2.putText(
+            self.canvas,
+            "CONTROLS:",
+            (text_pos_x, text_pos_y),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 0, 0),
+            2,
+        )
+        cv2.putText(
+            self.canvas,
+            "Esc: Exit application",
+            (text_pos_x, text_pos_y + 25),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 0, 0),
+        )
+        cv2.putText(
+            self.canvas,
+            "P: Pause application",
+            (text_pos_x, text_pos_y + 50),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 0, 0),
+        )
+        cv2.putText(
+            self.canvas,
+            "R: Resume application",
+            (text_pos_x, text_pos_y + 75),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 0, 0),
+        )
 
-        cv2.namedWindow('Camera', cv2.WINDOW_NORMAL)
-        cv2.resizeWindow('Camera', WINDOW_WIDTH, WINDOW_HEIGHT)
+        cv2.namedWindow("Camera", cv2.WINDOW_NORMAL)
+        cv2.resizeWindow("Camera", WINDOW_WIDTH, WINDOW_HEIGHT)
 
         self.frame_num = 0
 
-    def update_canvas(self, canvas, frame, heatmap, histogram):
+    def update_canvas(self):
         # Calculate dimensions
         cam_width = int(WINDOW_WIDTH * 0.49)
         cam_height = int(CAM_HEIGHT * cam_width / CAM_WIDTH)
@@ -50,32 +80,40 @@ class Application:
         graph_height = WINDOW_HEIGHT - cam_height
 
         # Check if frame, heatmap, histogram are not None and are numpy arrays
-        if frame is not None and isinstance(frame, np.ndarray) and frame.size > 0:
-            # Resize the image and update the canvas
-            frame_resized = cv2.resize(frame, (cam_width, cam_height))
-            canvas[:cam_height, :cam_width] = frame_resized
+        if (
+            self.frame is not None
+            and isinstance(self.frame, np.ndarray)
+            and self.frame.size > 0
+        ):
+            self.canvas[:cam_height, :cam_width] = self.frame
 
-        if heatmap is not None and isinstance(heatmap, np.ndarray) and heatmap.size > 0:
-            # Resize the image and update the canvas
-            heatmap_resized = cv2.resize(heatmap, (cam_width, cam_height))
-            canvas[:cam_height, -cam_width:] = heatmap_resized
+        if (
+            self.heatmap is not None
+            and isinstance(self.heatmap, np.ndarray)
+            and self.heatmap.size > 0
+        ):
+            self.canvas[:cam_height, -cam_width:] = self.heatmap
 
-        if histogram is not None and isinstance(histogram, np.ndarray) and histogram.size > 0:
-            # Resize the image and update the canvas
-            histogram_resized = cv2.resize(histogram, (graph_width, graph_height))
-            canvas[-graph_height:, :graph_width] = histogram_resized
+        if (
+            self.histogram is not None
+            and isinstance(self.histogram, np.ndarray)
+            and self.histogram.size > 0
+        ):
+            self.canvas[-graph_height:, :graph_width] = self.histogram
 
-        cv2.imshow('Camera', canvas)
+        cv2.imshow("Camera", self.canvas)
 
-        return canvas
+        return self.canvas
 
     def run(self):
         # Define video output parameters
-        output_filename = 'output_video.mp4'
-        codec = cv2.VideoWriter_fourcc(*'mp4v')
+        output_filename = "output_video.mp4"
+        codec = cv2.VideoWriter_fourcc(*"mp4v")
 
         # Initialize the VideoWriter
-        video_writer = cv2.VideoWriter(output_filename, codec, FPS, (WINDOW_WIDTH, WINDOW_HEIGHT))
+        video_writer = cv2.VideoWriter(
+            output_filename, codec, FPS, (WINDOW_WIDTH, WINDOW_HEIGHT)
+        )
 
         while True:
             start_time = time.time()
@@ -88,7 +126,9 @@ class Application:
                     return
 
                 # Update the images
-                self.canvas = self.update_canvas(self.canvas, self.frame, self.heatmap, self.histogram)
+                self.canvas = self.update_canvas(
+                    self.canvas, self.frame, self.heatmap, self.histogram
+                )
 
                 # Write the canvas to the video file
                 video_writer.write(self.canvas)
@@ -101,9 +141,13 @@ class Application:
                 key = cv2.waitKey(int(remaining * 100)) & 0xFF
             else:
                 key = cv2.waitKey(1) & 0xFF
-            if key == ord('p') or key == ord('P'):  # Pause the application when 'p' is pressed
+            if key == ord("p") or key == ord(
+                "P"
+            ):  # Pause the application when 'p' is pressed
                 self.updating = False
-            elif key == ord('r') or key == ord('R'):  # Resume the application when 'r' is pressed
+            elif key == ord("r") or key == ord(
+                "R"
+            ):  # Resume the application when 'r' is pressed
                 self.updating = True
             elif key == 27:  # Exit the application when 'ESC' is pressed
                 break
@@ -113,6 +157,12 @@ class Application:
         cv2.destroyAllWindows()
 
     def process_frame(self, current_time):
+        # Calculate dimensions
+        cam_width = int(WINDOW_WIDTH * 0.49)
+        cam_height = int(CAM_HEIGHT * cam_width / CAM_WIDTH)
+        graph_width = cam_width
+        graph_height = WINDOW_HEIGHT - cam_height
+
         # Increment frame number
         self.frame_num += 1
 
@@ -122,9 +172,22 @@ class Application:
             self.frame = None
             return
 
-        self.frame, detections = self.person_detector.detect(frame.copy(), self.frame_num)
-        heatmap = self.heatmap_generator.create_heatmap(detections, self.frame_num, 1)
+        self.frame, detections = self.person_detector.detect(
+            frame.copy(), self.frame_num
+        )
         self.heatmap = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        self.heatmap[:, :, 2] = (self.heatmap[:, :, 2].astype(np.uint16) + heatmap.astype(np.uint16)).clip(0, 255).astype(np.uint8)
+        heatmap = self.heatmap_generator.create_heatmap(detections, self.frame_num, 1)
 
         self.histogram = self.histogram_generator.add_input(detections, current_time)
+
+        # Resize the image and update the canvas
+        heatmap = cv2.resize(heatmap, (cam_width, cam_height))
+        self.frame = cv2.resize(self.frame, (cam_width, cam_height))
+        self.heatmap = cv2.resize(self.heatmap, (cam_width, cam_height))
+        self.histogram = cv2.resize(self.histogram, (graph_width, graph_height))
+
+        self.heatmap[:, :, 2] = (
+            (self.heatmap[:, :, 2].astype(np.uint16) + heatmap.astype(np.uint16))
+            .clip(0, 255)
+            .astype(np.uint8)
+        )
