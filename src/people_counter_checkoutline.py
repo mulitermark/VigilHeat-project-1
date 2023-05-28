@@ -230,7 +230,6 @@ def people_counter():
 
         # construct a tuple of information we will be displaying on the frame
         info_status = [
-            ("Customers", totalLeft + 1),
             ("Checking", 1),
             ('Checked-out customers', totalLeft)
         ]
