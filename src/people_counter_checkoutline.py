@@ -15,7 +15,6 @@ from imutils.video import FPS
 from centroidtracker import CentroidTracker
 from trackableobject import TrackableObject
 
-
 t0 = time.time()
 
 
@@ -182,7 +181,6 @@ def people_counter():
         timestamp = datetime.datetime.now()
         cv2.putText(frame, timestamp.strftime("%A %d %B %Y %I:%M:%S%p"), (10, H - ((i * 20) + 230)),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-
 
         # use the centroid tracker to associate the (1) old object
         # centroids with (2) the newly computed object centroids
