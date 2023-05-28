@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from dateutil.relativedelta import relativedelta
 import numpy as np
 
+
 class HistogramGenerator:
     def __init__(self, interval):
         self.interval = interval
@@ -30,7 +31,7 @@ class HistogramGenerator:
         self.weekly_count[week_number][day_of_week] += 1
         self.minute_count[minute] += 1
 
-    def add_input(self, detection_list, timestamp = None):
+    def add_input(self, detection_list, timestamp=None):
         """
         This method adds a list of timestamps to the histogram.
         """
@@ -91,6 +92,7 @@ class HistogramGenerator:
         plt.close(fig)
         return image
 
+
 # Test data generator
 def generate_test_data(months=0, days=0, hours=0, minutes=0):
     current_time = datetime.datetime.now()
@@ -109,26 +111,24 @@ def generate_test_data(months=0, days=0, hours=0, minutes=0):
     return test_data
 
 
-
 # Test cases
 def test_generate_histogram():
-
     histogram = HistogramGenerator('minute')
     test_data = generate_test_data(minutes=60)
     histogram.add_input(test_data)
-    histogram.generate_histogram(0, 59)   # Minute histogram
+    histogram.generate_histogram(0, 59)  # Minute histogram
 
     histogram = HistogramGenerator('hour')
     test_data = generate_test_data(hours=24)
     histogram.add_input(test_data)
-    histogram.generate_histogram(0, 23)   # Hourly histogram
+    histogram.generate_histogram(0, 23)  # Hourly histogram
 
     histogram = HistogramGenerator('day')
     test_data = generate_test_data(days=7)
     histogram.add_input(test_data)
-    histogram.generate_histogram(1, 30)   # Daily histogram
+    histogram.generate_histogram(1, 30)  # Daily histogram
 
     histogram = HistogramGenerator('week')
     test_data = generate_test_data(months=3)
     histogram.add_input(test_data)
-    histogram.generate_histogram(1, 50)   # Weekly histogram
+    histogram.generate_histogram(1, 50)  # Weekly histogram
