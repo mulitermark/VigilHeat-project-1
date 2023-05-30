@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import time
 
-from person_detector import PersonDetector
+from person_detector import PersonDetector, PersonDetectorOpenVino
 from heatmap_generator import HeatmapGenerator
 from stream_handler import VideoStreamHandler
 from histogram_generator import HistogramGenerator
@@ -27,7 +27,7 @@ class Application:
 
         video_path = "test.mp4"
         self.streamer = VideoStreamHandler(video_path)
-        self.person_detector = PersonDetector()
+        self.person_detector = PersonDetectorOpenVino("person-detection-retail-0013.xml","person-detection-retail-0013.bin")
 
         # Create an empty canvas
         self.canvas = np.ones((WINDOW_HEIGHT, WINDOW_WIDTH, 3), dtype=np.uint8) * 255
@@ -126,9 +126,7 @@ class Application:
                     return
 
                 # Update the images
-                self.canvas = self.update_canvas(
-                    self.canvas, self.frame, self.heatmap, self.histogram
-                )
+                self.canvas = self.update_canvas()
 
                 # Write the canvas to the video file
                 video_writer.write(self.canvas)
@@ -172,6 +170,7 @@ class Application:
             self.frame = None
             return
 
+        frame = cv2.resize(frame, (CAM_WIDTH, CAM_HEIGHT), interpolation=cv2.INTER_LINEAR)
         self.frame, detections = self.person_detector.detect(
             frame.copy(), self.frame_num
         )
