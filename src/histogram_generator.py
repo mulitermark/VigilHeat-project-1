@@ -10,11 +10,13 @@ import numpy as np
 
 class HistogramGenerator:
     def __init__(self, interval):
+        plt.switch_backend('agg')
         self.interval = interval
         self.hourly_count = defaultdict(int)
         self.daily_count = defaultdict(lambda: [datetime.date(2023, 1, 1), 0])
         self.weekly_count = defaultdict(lambda: defaultdict(int))
         self.minute_count = defaultdict(int)
+        self.histogram_image = None
 
     def process_input(self, timestamp):
         """
@@ -35,6 +37,10 @@ class HistogramGenerator:
         """
         This method adds a list of timestamps to the histogram.
         """
+        if detection_list is None:
+            self.histogram_image = None
+            return
+
         if timestamp is None:
             # use now as timestamp
             timestamp = datetime.datetime.now()
@@ -42,7 +48,7 @@ class HistogramGenerator:
         for _ in detection_list:
             self.process_input(timestamp)
 
-        return self.generate_histogram()
+        self.histogram_image = self.generate_histogram()
 
     def generate_histogram(self, start=0, end=59):
         """

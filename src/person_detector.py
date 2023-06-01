@@ -10,6 +10,8 @@ class PersonDetector:
         self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
         self.model.conf = 0.25
         self.model.classes = [0]
+        self.output_frame = None
+        self.detections = None
 
     def detect(self, frame, frame_num):
 
@@ -37,7 +39,8 @@ class PersonDetector:
         for center in ground_positions:
             cv2.circle(frame, center, 10, 0, -1)
 
-        return frame, np.array(single_image_detectons)
+        self.output_frame = frame
+        self.detections = np.array(single_image_detectons)
 
     def save_detections(self, path):
         np.save(path, np.array(self.detections))

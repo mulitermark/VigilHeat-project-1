@@ -2,6 +2,7 @@ import datetime
 import cv2
 import numpy as np
 import time
+import threading
 
 from person_detector import PersonDetector
 from heatmap_generator import HeatmapGenerator
@@ -111,9 +112,7 @@ class Application:
         codec = cv2.VideoWriter_fourcc(*"mp4v")
 
         # Initialize the VideoWriter
-        video_writer = cv2.VideoWriter(
-            output_filename, codec, FPS, (WINDOW_WIDTH, WINDOW_HEIGHT)
-        )
+        video_writer = cv2.VideoWriter(output_filename, codec, FPS, (WINDOW_WIDTH, WINDOW_HEIGHT))
 
         while True:
             start_time = time.time()
@@ -121,17 +120,16 @@ class Application:
             current_time = datetime.datetime.now()
             if self.updating:
                 # Process the frame
-                self.process_frame(current_time)
-                if self.frame is None:
+                success = self.process_frame(current_time)
+                if not success:
                     return
 
-                # Update the images
-                self.canvas = self.update_canvas(
-                    self.canvas, self.frame, self.heatmap, self.histogram
-                )
+                if self.frame is not None:
+                    # Update the images
+                    self.canvas = self.update_canvas()
 
-                # Write the canvas to the video file
-                video_writer.write(self.canvas)
+                    # Write the canvas to the video file
+                    video_writer.write(self.canvas)
 
             current_time = datetime.datetime.now()
             end_time = time.time()
@@ -170,24 +168,35 @@ class Application:
         frame = self.streamer.get_frame()
         if frame is None:
             self.frame = None
-            return
+            return False
 
-        self.frame, detections = self.person_detector.detect(
-            frame.copy(), self.frame_num
-        )
-        self.heatmap = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        heatmap = self.heatmap_generator.create_heatmap(detections, self.frame_num, 1)
+        frame = cv2.resize(frame, (CAM_WIDTH, CAM_HEIGHT), interpolation=cv2.INTER_LINEAR)
+        if self.person_detector.detections is not None:
+            detections = self.person_detector.detections.copy()
+            self.frame = self.person_detector.output_frame.copy()
+        else:
+            detections = None
+            self.frame = None
 
-        self.histogram = self.histogram_generator.add_input(detections, current_time)
+        heatmap_thread = threading.Thread(target=self.heatmap_generator.create_heatmap, args=(detections, self.frame_num, 1))
+        histogram_thread = threading.Thread(target=self.histogram_generator.add_input, args=(detections, current_time))
+        detect_thread = threading.Thread(target=self.person_detector.detect, args=(frame.copy(), self.frame_num))
+
+        heatmap_thread.start()
+        histogram_thread.start()
+        detect_thread.start()
+        heatmap_thread.join()
+        histogram_thread.join()
+        detect_thread.join()
 
         # Resize the image and update the canvas
-        heatmap = cv2.resize(heatmap, (cam_width, cam_height))
-        self.frame = cv2.resize(self.frame, (cam_width, cam_height))
-        self.heatmap = cv2.resize(self.heatmap, (cam_width, cam_height))
-        self.histogram = cv2.resize(self.histogram, (graph_width, graph_height))
+        if self.frame is not None:
+            heatmap = cv2.resize(self.heatmap_generator.heatmap, (cam_width, cam_height))
+            self.heatmap = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            self.frame = cv2.resize(self.frame, (cam_width, cam_height))
+            self.heatmap = cv2.resize(self.heatmap, (cam_width, cam_height))
+            self.histogram = cv2.resize(self.histogram_generator.histogram_image, (graph_width, graph_height))
 
-        self.heatmap[:, :, 2] = (
-            (self.heatmap[:, :, 2].astype(np.uint16) + heatmap.astype(np.uint16))
-            .clip(0, 255)
-            .astype(np.uint8)
-        )
+            self.heatmap[:, :, 2] = ((self.heatmap[:, :, 2].astype(np.uint16) + heatmap.astype(np.uint16)).clip(0, 255).astype(np.uint8))
+
+        return True

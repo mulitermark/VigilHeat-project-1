@@ -10,10 +10,12 @@ class HeatmapGenerator:
         self.detection_map = np.zeros((video_height, video_width), dtype=np.uint32)
         self.heatmap = np.zeros((video_height, video_width), dtype=np.uint8)
 
-    def create_heatmap(self, detections, frame_num, heatmap_intesity_scale_factor):
+    def create_heatmap(self, detections, frame_num, heatmap_intensity_scale_factor):
+        if detections is None:
+            self.heatmap = None
+            return
+
         self.detection_map[detections[:, 2], detections[:, 1]] += 1
 
-        multiplier = 2550000 / frame_num * heatmap_intesity_scale_factor
-        self.heatmap = (gaussian_filter(self.detection_map.astype(float), sigma=20) * multiplier).clip(0, 255).astype(
-            np.uint8)
-        return self.heatmap
+        multiplier = 2550000 / frame_num * heatmap_intensity_scale_factor
+        self.heatmap = (gaussian_filter(self.detection_map.astype(float), sigma=20) * multiplier).clip(0, 255).astype(np.uint8)
