@@ -40,7 +40,7 @@ class HistogramGenerator:
             timestamp = datetime.datetime.now()
         if detection_list is None:
             return
-        print(detection_list)
+
         n_detections = len(detection_list)
         if n_detections > 0:
             self.process_input(n_detections, timestamp)

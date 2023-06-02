@@ -17,11 +17,14 @@ CAM_HEIGHT = 720
 
 
 class Application:
-    def __init__(self, video_path):
+    def __init__(self, video_path, queue_sector=None):
         self.updating = True
         self.frame = None
         self.heatmap = None
         self.histogram = None
+        self.queue_sector = queue_sector
+        self.queue = 0
+        self.prev_queue = 0
 
         self.heatmap_generator = HeatmapGenerator(CAM_WIDTH, CAM_HEIGHT)
         self.histogram_generator = HistogramGenerator("minute")
@@ -68,6 +71,16 @@ class Application:
             (0, 0, 0),
         )
 
+        if self.queue_sector:
+            cv2.putText(
+                self.canvas,
+                f"Queue: {str(self.queue)}",
+                (text_pos_x, text_pos_y + 100),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 0, 0),
+            )
+
         cv2.namedWindow("Camera", cv2.WINDOW_NORMAL)
         cv2.resizeWindow("Camera", WINDOW_WIDTH, WINDOW_HEIGHT)
 
@@ -79,6 +92,8 @@ class Application:
         cam_height = int(CAM_HEIGHT * cam_width / CAM_WIDTH)
         graph_width = cam_width
         graph_height = WINDOW_HEIGHT - cam_height
+        text_pos_x = WINDOW_WIDTH - 220
+        text_pos_y = WINDOW_HEIGHT - 120
 
         # Check if frame, heatmap, histogram are not None and are numpy arrays
         if (
@@ -101,6 +116,28 @@ class Application:
             and self.histogram.size > 0
         ):
             self.canvas[-graph_height:, :graph_width] = self.histogram
+
+        if self.queue_sector and self.queue != self.prev_queue:
+            print("Queue changed", self.prev_queue, self.queue)
+            # delete previous queue, not elegant, but works
+            cv2.putText(
+                self.canvas,
+                f"Queue: {str(self.prev_queue)}",
+                (text_pos_x, text_pos_y + 100),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255, 255, 255),
+            )
+            cv2.putText(
+                self.canvas,
+                f"Queue: {str(self.queue)}",
+                (text_pos_x, text_pos_y + 100),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 0, 0),
+            )
+
+            self.prev_queue = self.queue
 
         cv2.imshow("Camera", self.canvas)
 
@@ -194,7 +231,11 @@ class Application:
 
         # Resize the image and update the canvas
         if self.frame is not None:
-            heatmap = cv2.resize(self.heatmap_generator.heatmap, (cam_width, cam_height))
+            if self.queue_sector:
+                self.frame, self.queue = get_queue(
+                    detections, self.queue_sector, self.frame
+                )
+
             self.heatmap = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             self.frame = cv2.resize(self.frame, (cam_width, cam_height))
             self.heatmap = cv2.resize(self.heatmap, (cam_width, cam_height))
@@ -203,6 +244,27 @@ class Application:
             self.heatmap[:, :, 2] = ((self.heatmap[:, :, 2].astype(np.uint16) + heatmap.astype(np.uint16)).clip(0, 255).astype(np.uint8))
 
         return True
+
+
+def get_queue(detections, rectangle, img):
+    # Unpack rectangle coordinates
+    x, y, x1, y1 = rectangle
+
+    # Draw rectangle on the image
+    cv2.rectangle(img, (x, y), (x1, y1), (0, 255, 0), 2)
+
+    # Initialize counter
+    counter = 0
+
+    # Go through all detections and check if they are within the rectangle
+    for detection in detections:
+        frame, center_x, center_y = detection
+
+        if x < center_x < x1 and y < center_y < y1:
+            # Increment the counter if the center of detection is within the rectangle
+            counter += 1
+
+    return img, counter
 
 
 def check_and_resize_video(input_path):
