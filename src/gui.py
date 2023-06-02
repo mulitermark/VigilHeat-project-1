@@ -17,7 +17,7 @@ CAM_HEIGHT = 720
 
 
 class Application:
-    def __init__(self):
+    def __init__(self, video_path):
         self.updating = True
         self.frame = None
         self.heatmap = None
@@ -26,7 +26,7 @@ class Application:
         self.heatmap_generator = HeatmapGenerator(CAM_WIDTH, CAM_HEIGHT)
         self.histogram_generator = HistogramGenerator("minute")
 
-        video_path = "test.mp4"
+        video_path = check_and_resize_video(video_path)
         self.streamer = VideoStreamHandler(video_path)
         self.person_detector = PersonDetector()
 
@@ -134,6 +134,9 @@ class Application:
             current_time = datetime.datetime.now()
             end_time = time.time()
             elapsed = end_time - start_time
+            print(
+                f"Frame {self.frame_num} processed in {elapsed:.3f} seconds. FPS = {1 / elapsed:.2f}"
+            )
             remaining = 1 / FPS - elapsed
             if remaining > 0:
                 key = cv2.waitKey(int(remaining * 100)) & 0xFF
@@ -200,3 +203,50 @@ class Application:
             self.heatmap[:, :, 2] = ((self.heatmap[:, :, 2].astype(np.uint16) + heatmap.astype(np.uint16)).clip(0, 255).astype(np.uint8))
 
         return True
+
+
+def check_and_resize_video(input_path):
+    # Capture the video from file
+    cap = cv2.VideoCapture(input_path)
+
+    # Check if video file is opened successfully
+    if not cap.isOpened():
+        print("Error opening video file")
+        return
+
+    # Get original video width and height
+    orig_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    orig_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # If the original dimensions are not 1280x720 then resize
+    print(f"Original video dimensions: {orig_width}x{orig_height} pixels.")
+    if orig_width != CAM_WIDTH or orig_height != CAM_HEIGHT:
+        print("Resizing video... please wait, this may take a minute.")
+        # Define the output path
+        output_path = "resized_video.mp4"
+        # Define the codec and create a VideoWriter object
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # or use 'XVID'
+        out = cv2.VideoWriter(
+            output_path, fourcc, cap.get(cv2.CAP_PROP_FPS), (CAM_WIDTH, CAM_HEIGHT)
+        )
+
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if ret:
+                # Resize frame
+                resized_frame = cv2.resize(frame, (CAM_WIDTH, CAM_HEIGHT))
+
+                # write the resized frame
+                out.write(resized_frame)
+            else:
+                break
+
+        # Release everything when job is finished
+        cap.release()
+        out.release()
+
+        print(f"Video was resized to {CAM_WIDTH}x{CAM_HEIGHT} pixels.")
+        return output_path
+    else:
+        print("Video is already the correct size.")
+        return input_path

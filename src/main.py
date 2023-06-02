@@ -3,7 +3,8 @@ from gui import Application
 
 
 def main():
-    app = Application()
+    path_video = "resized_video.mp4"
+    app = Application(path_video)
     app.run()
 
     return 0
