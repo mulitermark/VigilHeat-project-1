@@ -11,8 +11,8 @@ class HeatmapGenerator:
         self.heatmap = np.zeros((video_height, video_width), dtype=np.uint8)
 
     def create_heatmap(self, detections, frame_num, heatmap_intensity_scale_factor):
-        if detections is None:
-            self.heatmap = None
+        if detections is None or len(detections) == 0:
+            self.heatmap = self.heatmap
             return
 
         self.detection_map[detections[:, 2], detections[:, 1]] += 1
