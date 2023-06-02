@@ -1,94 +1,89 @@
 import datetime
 import io
 import random
-from collections import defaultdict
+from collections import Counter
+import string
 import cv2
 import matplotlib.pyplot as plt
-from dateutil.relativedelta import relativedelta
 import numpy as np
 
 
 class HistogramGenerator:
     def __init__(self, interval):
-        plt.switch_backend('agg')
+        plt.switch_backend("agg")
         self.interval = interval
-        self.hourly_count = defaultdict(int)
-        self.daily_count = defaultdict(lambda: [datetime.date(2023, 1, 1), 0])
-        self.weekly_count = defaultdict(lambda: defaultdict(int))
-        self.minute_count = defaultdict(int)
-        self.histogram_image = None
+        self.hourly_count = Counter()
+        self.minute_count = Counter()
+        self.minute_fps = Counter()
+        self.hourly_fps = Counter()
+        self.counter = 0
+        self.histogram_image = self.generate_histogram()
 
-    def process_input(self, timestamp):
+    def process_input(self, n_detections, timestamp):
         """
         This method processes the timestamp and increments the count in the corresponding time intervals.
         """
-        week_number = timestamp.isocalendar()[1]
-        day_of_year = timestamp.timetuple().tm_yday
         hour = timestamp.hour
         minute = timestamp.minute
-        day_of_week = timestamp.weekday()
 
-        self.hourly_count[hour] += 1
-        self.daily_count[day_of_year][1] += 1
-        self.weekly_count[week_number][day_of_week] += 1
-        self.minute_count[minute] += 1
+        self.hourly_count[hour] += n_detections
+        self.minute_count[minute] += n_detections
+        self.minute_fps[minute] += 1
+        self.hourly_fps[hour] += 1
 
     def add_input(self, detection_list, timestamp=None):
         """
         This method adds a list of timestamps to the histogram.
         """
-        if detection_list is None:
-            self.histogram_image = None
-            return
-
         if timestamp is None:
             # use now as timestamp
             timestamp = datetime.datetime.now()
+        if detection_list is None:
+            return
+        print(detection_list)
+        n_detections = len(detection_list)
+        if n_detections > 0:
+            self.process_input(n_detections, timestamp)
 
-        for _ in detection_list:
-            self.process_input(timestamp)
-
-        self.histogram_image = self.generate_histogram()
+        self.counter += 1
+        if self.counter >= 20:
+            print("Generating histogram")
+            self.counter = 0
+            self.histogram_image = self.generate_histogram()
 
     def generate_histogram(self, start=0, end=59):
         """
         This method generates a histogram based on the interval and range provided.
         """
-        if self.interval == 'hour':
+        if self.interval == "hour":
             data = self.hourly_count
-            xlabel = 'Hour of the day'
+            data_fps = self.hourly_fps
+            # calculate the upper round int average number of detections per hour
+            data = {key: round(value / data_fps[key], 0) for key, value in data.items()}
+            xlabel = "Hour of the day"
             x = list(range(start, end + 1))
             x_labels = x
-
-        elif self.interval == 'day':
-            data = {day: count for day, (_, count) in self.daily_count.items()}
-            xlabel = 'Day of the year'
-            x = list(range(start, end + 1))
-            x_labels = [datetime.datetime.now() + datetime.timedelta(days=day - 1) for day in x]
-            x_labels = [date.strftime('%b %d') for date in x_labels]
-
-        elif self.interval == 'week':
-            data = {week: sum(counts.values()) for week, counts in self.weekly_count.items()}
-            xlabel = 'Week of the year'
-            x = list(range(start, end + 1))
-            x_labels = [f"Week {i}" for i in x]
-
-        elif self.interval == 'minute':
+        elif self.interval == "minute":
             data = self.minute_count
-            xlabel = 'Minute of the hour'
+            data_fps = self.minute_fps
+            # calculate the int average number of detections per minute
+            data = {key: round(value / data_fps[key], 0) for key, value in data.items()}
+            xlabel = "Minute of the hour"
             x = list(range(start, end + 1))
-            x_labels = [f'{minute:02d}' if minute % 5 == 0 else '' for minute in x]
+            x_labels = [f"{minute:02d}" if minute % 5 == 0 else "" for minute in x]
         else:
-            raise ValueError("Invalid interval. Choose from 'hour', 'day', 'week', or 'minute'.")
+            raise ValueError("Invalid interval. Choose from 'hour' or 'minute'.")
 
         counts = [data.get(key, 0) for key in x]
         # blue color for the bars
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.bar(x, counts, color='#1f77b4')
+        ax.bar(x, counts, color="#1f77b4")
         ax.set_xlabel(xlabel)
         ax.set_ylabel("Number of detections")
-        ax.set_title(f"Person detection count per {self.interval} from {start} to {end}")
+        ax.set_title(
+            f"Person detection count per {self.interval} from {start} to {end}"
+        )
         ax.set_xticks(x, x_labels, rotation=45)
 
         # Return the histogram image as a cv2 image
@@ -100,41 +95,24 @@ class HistogramGenerator:
 
 
 # Test data generator
-def generate_test_data(months=0, days=0, hours=0, minutes=0):
-    current_time = datetime.datetime.now()
-    test_data = []
-
-    for _ in range(1000):
-        random_time = current_time + relativedelta(
-            months=random.randint(0, months),
-            days=random.randint(0, days),
-            hours=random.randint(0, hours),
-            minutes=random.randint(0, minutes),
-            seconds=random.randint(0, 59)
-        )
-        test_data.append(random_time)
-
-    return test_data
+def generate_test_data(n_samples=3000, n_detections=30):
+    return [
+        random.choices(string.ascii_letters, k=n_detections) for _ in range(n_samples)
+    ]
 
 
 # Test cases
 def test_generate_histogram():
-    histogram = HistogramGenerator('minute')
-    test_data = generate_test_data(minutes=60)
-    histogram.add_input(test_data)
-    histogram.generate_histogram(0, 59)  # Minute histogram
+    histogram = HistogramGenerator("minute")
+    test_data = generate_test_data()
+    now = datetime.datetime.now()
+    for data in test_data:
+        histogram.add_input(data, timestamp=now)
+        now += datetime.timedelta(seconds=(1 / 30))
+        # plot the histogram
+        cv2.imshow("Histogram", histogram.histogram_image)
+        cv2.waitKey(1)
 
-    histogram = HistogramGenerator('hour')
-    test_data = generate_test_data(hours=24)
-    histogram.add_input(test_data)
-    histogram.generate_histogram(0, 23)  # Hourly histogram
 
-    histogram = HistogramGenerator('day')
-    test_data = generate_test_data(days=7)
-    histogram.add_input(test_data)
-    histogram.generate_histogram(1, 30)  # Daily histogram
-
-    histogram = HistogramGenerator('week')
-    test_data = generate_test_data(months=3)
-    histogram.add_input(test_data)
-    histogram.generate_histogram(1, 50)  # Weekly histogram
+# if __name__ == "__main__":
+#     test_generate_histogram()
