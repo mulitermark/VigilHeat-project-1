@@ -159,7 +159,6 @@ def main():
                 len(detections))
             send_email(email_address, subject, message)
 
-
         if len(detections) == 0:
             # if no people detected, continue
             continue
