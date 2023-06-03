@@ -9,7 +9,7 @@ from heatmap_generator import HeatmapGenerator
 from stream_handler import VideoStreamHandler
 from histogram_generator import HistogramGenerator
 
-FPS = 30
+FPS = 12
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
 CAM_WIDTH = 1280
@@ -149,8 +149,9 @@ class Application:
         codec = cv2.VideoWriter_fourcc(*"mp4v")
 
         # Initialize the VideoWriter
-        video_writer = cv2.VideoWriter(output_filename, codec, FPS, (WINDOW_WIDTH, WINDOW_HEIGHT))
-
+        video_writer = cv2.VideoWriter(
+            output_filename, codec, FPS, (WINDOW_WIDTH, WINDOW_HEIGHT)
+        )
         while True:
             start_time = time.time()
             print(f"Processing frame {self.frame_num}...")
@@ -158,10 +159,12 @@ class Application:
                 # Process the frame
                 current_time = datetime.datetime.now()
                 success = self.process_frame(current_time)
-                if not success:
+                if success is None:
                     end_time = time.time()
                     continue
-
+                elif not success:
+                    print("End of video file reached.")
+                    break
 
                 if self.frame is not None:
                     # Update the images
@@ -176,7 +179,7 @@ class Application:
                 f"Frame {self.frame_num} processed in {elapsed:.3f} seconds. FPS = {1 / elapsed:.2f}"
             )
             remaining = 1 / FPS - elapsed
-            if remaining > 0:
+            if remaining > 1:
                 key = cv2.waitKey(int(remaining * 100)) & 0xFF
             else:
                 key = cv2.waitKey(1) & 0xFF
@@ -207,9 +210,9 @@ class Application:
 
         # Read the next frame from the video
         frame = self.streamer.get_frame()
-        if frame is None:
+        if frame is None or frame is False:
             self.frame = None
-            return False
+            return frame
 
         # frame = cv2.resize(frame, (CAM_WIDTH, CAM_HEIGHT), interpolation=cv2.INTER_LINEAR)
         if self.person_detector.detections is not None:
@@ -219,9 +222,16 @@ class Application:
             detections = None
             self.frame = None
 
-        heatmap_thread = threading.Thread(target=self.heatmap_generator.create_heatmap, args=(detections, self.frame_num, 1))
-        histogram_thread = threading.Thread(target=self.histogram_generator.add_input, args=(detections, current_time))
-        detect_thread = threading.Thread(target=self.person_detector.detect, args=(frame.copy(), self.frame_num))
+        heatmap_thread = threading.Thread(
+            target=self.heatmap_generator.create_heatmap,
+            args=(detections, self.frame_num, 1),
+        )
+        histogram_thread = threading.Thread(
+            target=self.histogram_generator.add_input, args=(detections, current_time)
+        )
+        detect_thread = threading.Thread(
+            target=self.person_detector.detect, args=(frame.copy(), self.frame_num)
+        )
 
         heatmap_thread.start()
         histogram_thread.start()
@@ -237,12 +247,21 @@ class Application:
                     detections, self.queue_sector, self.frame
                 )
 
+            heatmap = cv2.resize(
+                self.heatmap_generator.heatmap, (cam_width, cam_height)
+            )
             self.heatmap = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             self.frame = cv2.resize(self.frame, (cam_width, cam_height))
             self.heatmap = cv2.resize(self.heatmap, (cam_width, cam_height))
-            self.histogram = cv2.resize(self.histogram_generator.histogram_image, (graph_width, graph_height))
+            self.histogram = cv2.resize(
+                self.histogram_generator.histogram_image, (graph_width, graph_height)
+            )
 
-            self.heatmap[:, :, 2] = ((self.heatmap[:, :, 2].astype(np.uint16) + self.heatmap[:, :, 2].astype(np.uint16)).clip(0, 255).astype(np.uint8))
+            self.heatmap[:, :, 2] = (
+                (self.heatmap[:, :, 2].astype(np.uint16) + heatmap.astype(np.uint16))
+                .clip(0, 255)
+                .astype(np.uint8)
+            )
 
         return True
 
