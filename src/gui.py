@@ -15,6 +15,12 @@ WINDOW_HEIGHT = 720
 CAM_WIDTH = 1280
 CAM_HEIGHT = 720
 
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+YOUR_EMAIL = "your_email@gmail.com"  # replace with your Gmail address
+YOUR_PASSWORD = "your_password"  # replace with your Gmail password
 
 class Application:
     def __init__(self, video_path, queue_sector=None):
@@ -262,6 +268,13 @@ class Application:
                 .clip(0, 255)
                 .astype(np.uint8)
             )
+
+            # when the number of people exceeds 10, send an email notification
+            if self.queue > 10:
+                email_address = "recipient@example.com"  # recipient email address
+                subject = "People Count Exceeded"
+                message = "The people count has exceeded the limit of 10. Current people count is " + str(self.queue)
+                self.send_email(email_address, subject, message)
 
         return True
 
