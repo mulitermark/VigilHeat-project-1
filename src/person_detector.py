@@ -8,7 +8,7 @@ class PersonDetector:
 
         # Load YOLOv5 model
         self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
-        self.model.conf = 0.25
+        self.model.conf = 0.6
         self.model.classes = [0]
         self.output_frame = None
         self.detections = None

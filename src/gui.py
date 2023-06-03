@@ -154,17 +154,18 @@ class Application:
         while True:
             start_time = time.time()
             print(f"Processing frame {self.frame_num}...")
-            current_time = datetime.datetime.now()
             if self.updating:
                 # Process the frame
+                current_time = datetime.datetime.now()
                 success = self.process_frame(current_time)
                 if not success:
-                    return
+                    end_time = time.time()
+                    continue
+
 
                 if self.frame is not None:
                     # Update the images
                     self.canvas = self.update_canvas()
-
                     # Write the canvas to the video file
                     video_writer.write(self.canvas)
 
@@ -210,7 +211,7 @@ class Application:
             self.frame = None
             return False
 
-        frame = cv2.resize(frame, (CAM_WIDTH, CAM_HEIGHT), interpolation=cv2.INTER_LINEAR)
+        # frame = cv2.resize(frame, (CAM_WIDTH, CAM_HEIGHT), interpolation=cv2.INTER_LINEAR)
         if self.person_detector.detections is not None:
             detections = self.person_detector.detections.copy()
             self.frame = self.person_detector.output_frame.copy()
@@ -241,7 +242,7 @@ class Application:
             self.heatmap = cv2.resize(self.heatmap, (cam_width, cam_height))
             self.histogram = cv2.resize(self.histogram_generator.histogram_image, (graph_width, graph_height))
 
-            self.heatmap[:, :, 2] = ((self.heatmap[:, :, 2].astype(np.uint16) + heatmap.astype(np.uint16)).clip(0, 255).astype(np.uint8))
+            self.heatmap[:, :, 2] = ((self.heatmap[:, :, 2].astype(np.uint16) + self.heatmap[:, :, 2].astype(np.uint16)).clip(0, 255).astype(np.uint8))
 
         return True
 
