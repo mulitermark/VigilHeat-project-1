@@ -273,10 +273,30 @@ class Application:
             if self.queue > 10:
                 email_address = "recipient@example.com"  # recipient email address
                 subject = "People Count Exceeded"
-                message = "The people count has exceeded the limit of 10. Current people count is " + str(self.queue)
-                self.send_email(email_address, subject, message)
+                message = (
+                    "The people count has exceeded the limit of 10. Current people count is "
+                    + str(self.queue)
+                )
+                send_email(email_address, subject, message)
 
         return True
+
+
+def send_email(email, subject, message):
+    # Replace the placeholders with your Gmail account information
+    YOUR_EMAIL = "meijiaojiaohappy@gmail.com"
+    YOUR_PASSWORD = "bbbegyaiiilrqgaq"
+
+    msg = MIMEText(message)
+    msg["Subject"] = subject
+    msg["From"] = YOUR_EMAIL
+    msg["To"] = email
+
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    server.login(YOUR_EMAIL, YOUR_PASSWORD)
+    server.send_message(msg)
+    server.quit()
 
 
 def get_queue(detections, rectangle, img):
