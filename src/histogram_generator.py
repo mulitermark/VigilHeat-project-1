@@ -5,6 +5,7 @@ from collections import Counter
 import string
 import cv2
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 import numpy as np
 
 
@@ -60,7 +61,7 @@ class HistogramGenerator:
             data_fps = self.hourly_fps
             # calculate the upper round int average number of detections per hour
             data = {key: round(value / data_fps[key], 0) for key, value in data.items()}
-            xlabel = "Hour of the day"
+            xlabel = "Hour"
             x = list(range(start, end + 1))
             x_labels = x
         elif self.interval == "minute":
@@ -68,7 +69,7 @@ class HistogramGenerator:
             data_fps = self.minute_fps
             # calculate the int average number of detections per minute
             data = {key: round(value / data_fps[key], 0) for key, value in data.items()}
-            xlabel = "Minute of the hour"
+            xlabel = "Minute"
             x = list(range(start, end + 1))
             x_labels = [f"{minute:02d}" if minute % 5 == 0 else "" for minute in x]
         else:
@@ -81,9 +82,10 @@ class HistogramGenerator:
         ax.bar(x, counts, color="#1f77b4")
         ax.set_xlabel(xlabel)
         ax.set_ylabel("Number of detections")
-        ax.set_title(
-            f"Person detection count per {self.interval} from {start} to {end}"
-        )
+        ax.yaxis.set_major_locator(
+            MaxNLocator(integer=True)
+        )  # Ensure y-axis has integer labels.
+        ax.set_title(f"Person detection count per {self.interval}")
         ax.set_xticks(x, x_labels, rotation=45)
 
         # Return the histogram image as a cv2 image

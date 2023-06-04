@@ -15,12 +15,10 @@ class HeatmapGenerator:
         if detections is None or len(detections) == 0:
             return
 
-        print("adding detections to heatmap, counter:", self.counter + 1)
         self.detection_map[detections[:, 2], detections[:, 1]] += 1
 
         self.counter += 1
         if self.counter >= 7:
-            print("Generating heatmap")
             self.counter = 0
             multiplier = 2550000 * 3 / frame_num * heatmap_intensity_scale_factor
             self.heatmap = (

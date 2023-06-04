@@ -1,4 +1,5 @@
 import datetime
+import sys
 import cv2
 import numpy as np
 import time
@@ -22,6 +23,7 @@ from email.mime.text import MIMEText
 YOUR_EMAIL = "your_email@gmail.com"  # replace with your Gmail address
 YOUR_PASSWORD = "your_password"  # replace with your Gmail password
 
+
 class Application:
     def __init__(self, video_path, queue_sector=None):
         self.updating = True
@@ -31,6 +33,8 @@ class Application:
         self.queue_sector = queue_sector
         self.queue = 0
         self.prev_queue = 0
+        self.queue_limit = 3
+        self.time_last_warning = datetime.datetime.now() - datetime.timedelta(minutes=5)
 
         self.heatmap_generator = HeatmapGenerator(CAM_WIDTH, CAM_HEIGHT)
         self.histogram_generator = HistogramGenerator("minute")
@@ -39,52 +43,34 @@ class Application:
         self.streamer = VideoStreamHandler(video_path)
         self.person_detector = PersonDetector()
 
-        # Create an empty canvas
-        self.canvas = np.ones((WINDOW_HEIGHT, WINDOW_WIDTH, 3), dtype=np.uint8) * 255
-        text_pos_x = WINDOW_WIDTH - 220
-        text_pos_y = WINDOW_HEIGHT - 120
-        cv2.putText(
-            self.canvas,
-            "CONTROLS:",
-            (text_pos_x, text_pos_y),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (0, 0, 0),
-            2,
-        )
-        cv2.putText(
-            self.canvas,
-            "Esc: Exit application",
-            (text_pos_x, text_pos_y + 25),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (0, 0, 0),
-        )
-        cv2.putText(
-            self.canvas,
-            "P: Pause application",
-            (text_pos_x, text_pos_y + 50),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (0, 0, 0),
-        )
-        cv2.putText(
-            self.canvas,
-            "R: Resume application",
-            (text_pos_x, text_pos_y + 75),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (0, 0, 0),
-        )
+        # Load canvas background
+        self.canvas = cv2.imread("src/gui.jpg")
 
         if self.queue_sector:
+            # save the sector of the image to reset the number
+            self.number_patch = self.canvas[
+                565 - 100 : 565 + 100, 750 - 100 : 750 + 100
+            ].copy()
+            # use bold font for queue
             cv2.putText(
                 self.canvas,
-                f"Queue: {str(self.queue)}",
-                (text_pos_x, text_pos_y + 100),
+                f"{str(self.queue)}",
+                (750, 565),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (0, 0, 0),
+                2,
+                (255, 255, 255),
+                2,
+            )
+        else:
+            # write "Not active" if queue sector is not defined
+            cv2.putText(
+                self.canvas,
+                "Not active",
+                (700, 545),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (255, 255, 255),
+                2,
             )
 
         cv2.namedWindow("Camera", cv2.WINDOW_NORMAL)
@@ -102,45 +88,52 @@ class Application:
         text_pos_y = WINDOW_HEIGHT - 120
 
         # Check if frame, heatmap, histogram are not None and are numpy arrays
+        edge = 10
+        if (
+            self.histogram is not None
+            and isinstance(self.histogram, np.ndarray)
+            and self.histogram.size > 0
+        ):
+            self.canvas[
+                -graph_height + edge + 5 : -edge,
+                edge : graph_width + edge,
+            ] = self.histogram[edge * 2 + 5 : graph_height, :graph_width]
+
         if (
             self.frame is not None
             and isinstance(self.frame, np.ndarray)
             and self.frame.size > 0
         ):
-            self.canvas[:cam_height, :cam_width] = self.frame
+            self.canvas[edge : cam_height + edge, edge : cam_width + edge] = self.frame
 
         if (
             self.heatmap is not None
             and isinstance(self.heatmap, np.ndarray)
             and self.heatmap.size > 0
         ):
-            self.canvas[:cam_height, -cam_width:] = self.heatmap
-
-        if (
-            self.histogram is not None
-            and isinstance(self.histogram, np.ndarray)
-            and self.histogram.size > 0
-        ):
-            self.canvas[-graph_height:, :graph_width] = self.histogram
+            self.canvas[
+                edge : cam_height + edge, -cam_width - edge : -edge
+            ] = self.heatmap
 
         if self.queue_sector and self.queue != self.prev_queue:
             print("Queue changed", self.prev_queue, self.queue)
             # delete previous queue, not elegant, but works
+            self.canvas[
+                565 - 100 : 565 + 100, 750 - 100 : 750 + 100
+            ] = self.number_patch.copy()
+            # use red if the number of people exceeds the limit
+            if self.queue > self.queue_limit:
+                color = (0, 0, 255)
+            else:
+                color = (255, 255, 255)
             cv2.putText(
                 self.canvas,
-                f"Queue: {str(self.prev_queue)}",
-                (text_pos_x, text_pos_y + 100),
+                f"{str(self.queue)}",
+                (750, 565),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (255, 255, 255),
-            )
-            cv2.putText(
-                self.canvas,
-                f"Queue: {str(self.queue)}",
-                (text_pos_x, text_pos_y + 100),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (0, 0, 0),
+                2,
+                color,
+                2,
             )
 
             self.prev_queue = self.queue
@@ -181,9 +174,6 @@ class Application:
             current_time = datetime.datetime.now()
             end_time = time.time()
             elapsed = end_time - start_time
-            print(
-                f"Frame {self.frame_num} processed in {elapsed:.3f} seconds. FPS = {1 / elapsed:.2f}"
-            )
             remaining = 1 / FPS - elapsed
             if remaining > 1:
                 key = cv2.waitKey(int(remaining * 100)) & 0xFF
@@ -224,6 +214,7 @@ class Application:
         if self.person_detector.detections is not None:
             detections = self.person_detector.detections.copy()
             self.frame = self.person_detector.output_frame.copy()
+
         else:
             detections = None
             self.frame = None
@@ -269,8 +260,13 @@ class Application:
                 .astype(np.uint8)
             )
 
-            # when the number of people exceeds 10, send an email notification
-            if self.queue > 10:
+            # when the number of people exceeds self.queue_limit, send an email notification
+            # only send the notification once every 2 minutes
+            if (
+                self.queue > self.queue_limit
+                and (self.time_last_warning + datetime.timedelta(minutes=2))
+                < datetime.datetime.now()
+            ):
                 email_address = "recipient@example.com"  # recipient email address
                 subject = "People Count Exceeded"
                 message = (
@@ -278,6 +274,8 @@ class Application:
                     + str(self.queue)
                 )
                 send_email(email_address, subject, message)
+                print(" ------------- Email sent ------------- ")
+                self.time_last_warning = datetime.datetime.now()
 
         return True
 
@@ -295,7 +293,10 @@ def send_email(email, subject, message):
     server = smtplib.SMTP("smtp.gmail.com", 587)
     server.starttls()
     server.login(YOUR_EMAIL, YOUR_PASSWORD)
-    server.send_message(msg)
+    try:
+        server.send_message(msg)
+    except:
+        print("Error sending email")
     server.quit()
 
 
@@ -305,6 +306,18 @@ def get_queue(detections, rectangle, img):
 
     # Draw rectangle on the image
     cv2.rectangle(img, (x, y), (x1, y1), (0, 255, 0), 2)
+    # write "Queue zone" on the left bottom corner of the rectangle
+    cv2.rectangle(img, (x, y1 - 24), (x + 135, y1), (0, 255, 0), -1)
+    cv2.putText(
+        img,
+        "Queue zone",
+        (x, y1 - 5),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.7,
+        (0, 0, 0),
+        2,
+        cv2.LINE_AA,
+    )
 
     # Initialize counter
     counter = 0
