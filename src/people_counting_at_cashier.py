@@ -42,7 +42,7 @@ def draw_heatmap(frame, detections):
 
     heatmap = cv2.normalize(heatmap, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 
-    # 将热力图应用于原始帧图像
+    # use the heatmap to create a colored heatmap
     heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
     heatmap = cv2.addWeighted(frame, 0.7, heatmap, 0.3, 0)
 
@@ -93,6 +93,12 @@ def main():
 
     # load yolov8l.pt model
     model = YOLO("yolov8l.pt")
+
+    # load the best checkpoint from the training
+    model = YOLO("runs/detect/train/weights/best.pt")
+
+    # train the model
+    # model.train(data="coco128.yaml", imgsz=640, epochs=10)
 
     # set box_annotator
     box_annotator = sv.BoxAnnotator(
