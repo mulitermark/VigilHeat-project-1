@@ -34,7 +34,3 @@ CMD ["python3","main.py"]
 # COPY app /app
 
 # WORKDIR /app
-
-# RUN mkdir /data
-
-
