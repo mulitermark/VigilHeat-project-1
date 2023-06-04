@@ -1,0 +1,1 @@
+streamlit run /home/chaki/Projects/VigilHeat-project/crowd_analysis.py
