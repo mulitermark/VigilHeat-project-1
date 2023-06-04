@@ -191,7 +191,7 @@ And for the other assignments, (everyone can modify the following information if
 **Retrospective**: I'm unsure about the specific team member responsible for this task as I have forgotten the details of this assignment.
 
 A screenshot at Sunday June 4 3:14:14:
-<img width="1026" alt="image" src="https://github.com/JIAOJIAOMEI/VigilHeat-project/assets/90816748/5a2801dd-584e-4f44-8561-fc1166825b6c">
+![image-20230604032210994](MVPScope/image-20230604032210994.png)
 
 
 # reference
