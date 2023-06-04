@@ -160,7 +160,7 @@ In summary, we have accomplished our goals by achieving exceptional detection ac
 
 # A screenshot for the commits
 
-
+![image-20230604170435698](Images/image-20230604170435698.png)
 
 # For other assignments
 
@@ -172,9 +172,9 @@ In summary, we have accomplished our goals by achieving exceptional detection ac
 
 **MVP User Stories**: Arriagada Silva Sebastián Ignacio took the lead in drafting the initial PDF document for this section, and Jiaojiao subsequently made significant additions and modifications.
 
-**Retrospective**: 
+**Retrospective**: Jiaojiao doesn't know or remember this one.
 
-The code: see the contribution.
+**The code**: see the contribution.
 
 # reference
 
