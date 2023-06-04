@@ -128,7 +128,6 @@ If you would like a clearer teaser video of the project, you can find a video de
 python3 main.py
 ```
 
-These two files are save as people_count.png and poeple_count.csv after each run.<br />These files can be further used to predict peak hours, but I don't have time to implement that.
 
 # MVP scope completion
 
