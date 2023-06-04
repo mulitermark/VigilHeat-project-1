@@ -95,7 +95,7 @@ def main():
     model = YOLO("yolov8l.pt")
 
     # load the best checkpoint from the training
-    model = YOLO("runs/detect/train/weights/best.pt")
+    # model = YOLO("runs/detect/train/weights/best.pt")
 
     # train the model
     # model.train(data="coco128.yaml", imgsz=640, epochs=10)
