@@ -15,15 +15,18 @@ RUN apt install python3-pip -y
 # RUN pip3 install openvino openvino-dev termcolor
 
 RUN ls
-
 COPY app/ /app
 
 WORKDIR /app
 
 
+RUN pip3 install -r requirements.txt
+
 RUN apt-get install python3-tk -y
 RUN apt-get install python3-scipy -y
-RUN pip3 install -r requirements.txt
+
+RUN pip3 install pandas psutil
+RUN pip3 install tqdm ultralytics
 
 CMD ["python3","main.py"]
 

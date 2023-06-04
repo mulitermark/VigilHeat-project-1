@@ -44,7 +44,7 @@ class Application:
         self.person_detector = PersonDetector()
 
         # Load canvas background
-        self.canvas = cv2.imread("src/gui.jpg")
+        self.canvas = cv2.imread("/app/gui.jpg")
 
         if self.queue_sector:
             # save the sector of the image to reset the number
