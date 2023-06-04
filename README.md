@@ -127,7 +127,7 @@ Low Priority:
 1. Tracking customer satisfaction levels: The code does not include functionality to track customer satisfaction levels. **Completion: 0%**
 # MVP technical tasks completion by Jiaojiao
 
-![image-20230430223044199](MVP Scope/image-20230430223044199.png)
+![image-20230430223044199](MVPScope/image-20230430223044199.png)
 
 1. Object detection:
    - **Completion Percentage: 100%**
